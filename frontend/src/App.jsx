@@ -1,9 +1,9 @@
-import Test from "./functions/test"
+import Video from "./functions/Video"
 
 export default function App(){
     return(
         <>
-        <Test/>
+        <Video/>
         </>
     )
 }

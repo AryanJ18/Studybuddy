@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react"
 
-export default function Test(){
+export default function Video(){
 
   const videoRef = useRef(null);
 
