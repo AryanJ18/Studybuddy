@@ -1,10 +1,14 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import { calculateEAR } from "./Ear";
 
 export default function Video(){
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const [events, setEvents] = useState([]);
+  const isEyesClosedRef = useRef(false);
+  const startTimeRef = useRef(null);
 
   async function init(){
     const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
@@ -30,6 +34,11 @@ export default function Video(){
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (result.faceLandmarks.length > 0) {
           const landmarks = result.faceLandmarks[0];
+
+          const leftEyeIndices = [33, 160, 158, 133, 153, 144];
+          const leftEye = leftEyeIndices.map(i => landmarks[i]);
+          const ear = calculateEAR(leftEye);
+          handleEAR(ear);
 
           landmarks.forEach((point) => {
             ctx.beginPath();
@@ -69,6 +78,38 @@ export default function Video(){
     start();
   },[])
 
+  function handleEAR(ear) {
+    const now = Date.now();
+
+    // CASE 1: eyes closed → start event
+    if (ear < 0.2) {
+      if (!isEyesClosedRef.current) {
+        isEyesClosedRef.current = true;
+        startTimeRef.current = now;
+      }
+    } 
+    // CASE 2: eyes open → end event
+    else {
+      if (isEyesClosedRef.current) {
+        const duration = now - startTimeRef.current;
+
+        if (duration > 500) {
+          const event = {
+            type: "eyes_closed",
+            startTime: startTimeRef.current,
+            endTime: now,
+            duration: duration
+          };
+
+          setEvents(prev => [...prev, event]);
+          console.log("Event logged:", event);
+        }
+
+        isEyesClosedRef.current = false;
+        startTimeRef.current = null;
+      }
+    }
+  }
   
   return (
       <div style={{ position: "relative" }}><video ref={videoRef} autoPlay playsInline style={{ position: "absolute" }}/>
