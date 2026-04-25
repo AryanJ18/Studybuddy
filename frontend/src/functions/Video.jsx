@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { calculateEAR } from "./Ear";
+import { detectAttention } from "./Head";
 
 export default function Video(){
 
@@ -38,6 +39,8 @@ export default function Video(){
           const leftEyeIndices = [33, 160, 158, 133, 153, 144];
           const leftEye = leftEyeIndices.map(i => landmarks[i]);
           const ear = calculateEAR(leftEye);
+
+          console.log(detectAttention(landmarks));
           handleEAR(ear);
 
           landmarks.forEach((point) => {
