@@ -15,6 +15,9 @@ export default function Video(){
   const startTimeRef = useRef(null);
   const lastFrameTimeRef = useRef(0);
   const frameDeltaRef = useRef(1000 / 30); // 30fps = ~33.33ms per frame
+  const sessionStartRef = useRef(null);
+  const sessionEndRef = useRef(null);
+  const isRunningRef = useRef(false);
 
   const eyesRef = useRef({ active: false, start: null });
   const phoneRef = useRef({ active: false, start: null });
@@ -64,6 +67,8 @@ export default function Video(){
   }
 
   function loop() {
+    if (!isRunningRef.current) return;
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const currentTime = performance.now();
@@ -123,20 +128,39 @@ export default function Video(){
     });
   }
 
-  useEffect(()=>{
-    async function start() {
-      await setUpCamera();
-      await init();
-      await initObjectDetector();
-
-      loop();
-    }
-    start();
-  },[])
-
   useEffect(() => {
     console.log("EVENTS UPDATED:", events);
   }, [events]);
+
+  // Add global start/stop session functions
+  window.startSession = async () => {
+    isRunningRef.current = true;
+    sessionStartRef.current = Date.now();
+
+    await setUpCamera();
+    await init();
+    await initObjectDetector();
+
+    loop();
+  };
+
+  window.stopSession = () => {
+    isRunningRef.current = false;
+    sessionEndRef.current = Date.now();
+
+    const sessionData = {
+      start: sessionStartRef.current,
+      end: sessionEndRef.current,
+      duration: sessionEndRef.current - sessionStartRef.current,
+      events: events
+    };
+
+    console.log("SESSION DATA:", sessionData);
+
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+  };
 
   function handleEAR(ear) {
     const now = Date.now();
