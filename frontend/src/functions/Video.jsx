@@ -4,6 +4,7 @@ import { calculateEAR } from "./Ear";
 import { detectAttention } from "./Head";
 import { updateEvent } from "./Manager";
 import { generateSummary } from "./Summary";
+import axios from "axios";
 
 export default function Video(){
 
@@ -145,7 +146,7 @@ export default function Video(){
     loop();
   };
 
-  window.stopSession = () => {
+  window.stopSession = async () => {
     isRunningRef.current = false;
     sessionEndRef.current = Date.now();
 
@@ -159,7 +160,10 @@ export default function Video(){
     const summary = generateSummary(sessionData);
 
     console.log("SUMMARY:", summary);
-    // console.log("SESSION DATA:", sessionData);
+    
+
+    const res = await axios.post("http://127.0.0.1:8000/report",summary);
+    console.log("BACKEND RESPONSE:", res.data);
 
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
