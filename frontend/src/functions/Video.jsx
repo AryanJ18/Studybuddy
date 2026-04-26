@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { FaceLandmarker, FilesetResolver, ObjectDetector } from "@mediapipe/tasks-vision";
 import { calculateEAR } from "./Ear";
 import { detectAttention } from "./Head";
+import { updateEvent } from "./Manager";
 
 export default function Video(){
 
@@ -14,6 +15,10 @@ export default function Video(){
   const startTimeRef = useRef(null);
   const lastFrameTimeRef = useRef(0);
   const frameDeltaRef = useRef(1000 / 30); // 30fps = ~33.33ms per frame
+
+  const eyesRef = useRef({ active: false, start: null });
+  const phoneRef = useRef({ active: false, start: null });
+  const headRef = useRef({ active: false, start: null });
 
   async function initObjectDetector() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -31,7 +36,7 @@ export default function Video(){
   }
 
   function detectPhone(video) {
-    if (!objectDetectorRef.current) return;
+    if (!objectDetectorRef.current) return false;
 
     const result = objectDetectorRef.current.detectForVideo(video, performance.now());
 
@@ -79,12 +84,15 @@ export default function Video(){
           const leftEyeIndices = [33, 160, 158, 133, 153, 144];
           const leftEye = leftEyeIndices.map(i => landmarks[i]);
           const ear = calculateEAR(leftEye);
-          console.log(detectAttention(landmarks));
-          handleEAR(ear);
-          const phone = detectPhone(video);
-          if (phone) {
-            console.log("PHONE 📱");
-          }
+
+          const isEyesClosed = ear < 0.2;
+          const attention = detectAttention(landmarks);
+          const isLookingAway = attention !== "focused";
+          const isPhone = detectPhone(video);
+
+          updateEvent(isEyesClosed, eyesRef, "eyes_closed", setEvents);
+          updateEvent(isLookingAway, headRef, "looking_away", setEvents);
+          updateEvent(isPhone, phoneRef, "phone", setEvents);
 
           landmarks.forEach((point) => {
             ctx.beginPath();
@@ -125,6 +133,10 @@ export default function Video(){
     }
     start();
   },[])
+
+  useEffect(() => {
+    console.log("EVENTS UPDATED:", events);
+  }, [events]);
 
   function handleEAR(ear) {
     const now = Date.now();
