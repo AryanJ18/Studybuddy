@@ -3,6 +3,7 @@ import { FaceLandmarker, FilesetResolver, ObjectDetector } from "@mediapipe/task
 import { calculateEAR } from "./Ear";
 import { detectAttention } from "./Head";
 import { updateEvent } from "./Manager";
+import { generateSummary } from "./Summary";
 
 export default function Video(){
 
@@ -155,7 +156,10 @@ export default function Video(){
       events: events
     };
 
-    console.log("SESSION DATA:", sessionData);
+    const summary = generateSummary(sessionData);
+
+    console.log("SUMMARY:", summary);
+    // console.log("SESSION DATA:", sessionData);
 
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
