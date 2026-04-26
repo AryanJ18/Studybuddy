@@ -12,6 +12,8 @@ export default function Video(){
   const [events, setEvents] = useState([]);
   const isEyesClosedRef = useRef(false);
   const startTimeRef = useRef(null);
+  const lastFrameTimeRef = useRef(0);
+  const frameDeltaRef = useRef(1000 / 30); // 30fps = ~33.33ms per frame
 
   async function initObjectDetector() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -59,37 +61,42 @@ export default function Video(){
   function loop() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    const currentTime = performance.now();
 
-    if (video && canvas && video.readyState >= 2) {
-      const ctx = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    if (currentTime - lastFrameTimeRef.current >= frameDeltaRef.current) {
+      lastFrameTimeRef.current = currentTime;
 
-      const result = faceLandmarkerRef.current.detectForVideo(video,performance.now());
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (result.faceLandmarks.length > 0) {
-        const landmarks = result.faceLandmarks[0];
+      if (video && canvas && video.readyState >= 2) {
+        const ctx = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-        const leftEyeIndices = [33, 160, 158, 133, 153, 144];
-        const leftEye = leftEyeIndices.map(i => landmarks[i]);
-        const ear = calculateEAR(leftEye);
-        console.log(detectAttention(landmarks));
-        handleEAR(ear);
-        const phone = detectPhone(video);
-        if (phone) {
-          console.log("PHONE 📱");
+        const result = faceLandmarkerRef.current.detectForVideo(video,performance.now());
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (result.faceLandmarks.length > 0) {
+          const landmarks = result.faceLandmarks[0];
+
+          const leftEyeIndices = [33, 160, 158, 133, 153, 144];
+          const leftEye = leftEyeIndices.map(i => landmarks[i]);
+          const ear = calculateEAR(leftEye);
+          console.log(detectAttention(landmarks));
+          handleEAR(ear);
+          const phone = detectPhone(video);
+          if (phone) {
+            console.log("PHONE 📱");
+          }
+
+          landmarks.forEach((point) => {
+            ctx.beginPath();
+            ctx.arc(
+              point.x * canvas.width,
+              point.y * canvas.height,
+              2,
+              0,
+              2 * Math.PI);
+            ctx.fill();
+          });
         }
-
-        landmarks.forEach((point) => {
-          ctx.beginPath();
-          ctx.arc(
-            point.x * canvas.width,
-            point.y * canvas.height,
-            2,
-            0,
-            2 * Math.PI);
-          ctx.fill();
-        });
       }
     }
     requestAnimationFrame(loop);
