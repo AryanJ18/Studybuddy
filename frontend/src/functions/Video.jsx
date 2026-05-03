@@ -5,6 +5,7 @@ import { detectAttention } from "./Head";
 import { updateEvent } from "./Manager";
 import { generateSummary } from "./Summary";
 import axios from "axios";
+import alertSoundFile from "./sound/bep.mp3";
 
 export default function Video(){
 
@@ -20,10 +21,38 @@ export default function Video(){
   const sessionStartRef = useRef(null);
   const sessionEndRef = useRef(null);
   const isRunningRef = useRef(false);
+  const alertSoundRef = useRef(null);
+  const lastAlertAtRef = useRef(0);
 
   const eyesRef = useRef({ active: false, start: null });
   const phoneRef = useRef({ active: false, start: null });
   const headRef = useRef({ active: false, start: null });
+  const ALERT_COOLDOWN_MS = 3000;
+
+  function playAlertSound() {
+    const audio = alertSoundRef.current;
+    if (!audio) return;
+
+    const now = Date.now();
+    if (now - lastAlertAtRef.current < ALERT_COOLDOWN_MS) return;
+
+    lastAlertAtRef.current = now;
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+      // Ignore autoplay rejection; session start tries to unlock audio first.
+    });
+  }
+
+  useEffect(() => {
+    const audio = new Audio(alertSoundFile);
+    audio.preload = "auto";
+    alertSoundRef.current = audio;
+
+    return () => {
+      audio.pause();
+      alertSoundRef.current = null;
+    };
+  }, []);
 
   async function initObjectDetector() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -96,6 +125,9 @@ export default function Video(){
           const attention = detectAttention(landmarks);
           const isLookingAway = attention !== "focused";
           const isPhone = detectPhone(video);
+          if (isLookingAway || isPhone) {
+            playAlertSound();
+          }
 
           updateEvent(isEyesClosed, eyesRef, "eyes_closed", setEvents);
           updateEvent(isLookingAway, headRef, "looking_away", setEvents);
@@ -134,10 +166,25 @@ export default function Video(){
     console.log("EVENTS UPDATED:", events);
   }, [events]);
 
-  // Add global start/stop session functions
+
   window.startSession = async () => {
     isRunningRef.current = true;
     sessionStartRef.current = Date.now();
+
+    // User clicked start, so unlock audio once to satisfy browser autoplay policy.
+    const audio = alertSoundRef.current;
+    if (audio) {
+      try {
+        audio.muted = true;
+        await audio.play();
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // No-op: playback will be attempted again during detection.
+      } finally {
+        audio.muted = false;
+      }
+    }
 
     await setUpCamera();
     await init();
