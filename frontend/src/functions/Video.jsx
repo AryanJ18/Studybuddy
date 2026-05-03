@@ -21,6 +21,8 @@ export default function Video(){
   const sessionStartRef = useRef(null);
   const sessionEndRef = useRef(null);
   const isRunningRef = useRef(false);
+  const stopSessionPromiseRef = useRef(null);
+  const lastSummaryRef = useRef(null);
   const alertSoundRef = useRef(null);
   const lastAlertAtRef = useRef(0);
 
@@ -169,6 +171,8 @@ export default function Video(){
 
   window.startSession = async () => {
     isRunningRef.current = true;
+    stopSessionPromiseRef.current = null;
+    lastSummaryRef.current = null;
     sessionStartRef.current = Date.now();
 
     // User clicked start, so unlock audio once to satisfy browser autoplay policy.
@@ -194,6 +198,15 @@ export default function Video(){
   };
 
   window.stopSession = async () => {
+    if (stopSessionPromiseRef.current) {
+      return stopSessionPromiseRef.current;
+    }
+
+    if (!isRunningRef.current && lastSummaryRef.current) {
+      return lastSummaryRef.current;
+    }
+
+    stopSessionPromiseRef.current = (async () => {
     isRunningRef.current = false;
     sessionEndRef.current = Date.now();
 
@@ -207,13 +220,27 @@ export default function Video(){
     const summary = generateSummary(sessionData);
 
     console.log("SUMMARY:", summary);
-    
 
     const res = await axios.post("http://127.0.0.1:8000/report",summary);
     console.log("BACKEND RESPONSE:", res.data);
 
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+
+    const result = {
+      ...summary,
+      totalTime: sessionData.duration,
+      backendResponse: res.data.report,
+    };
+    lastSummaryRef.current = result;
+    return result;
+    })();
+
+    try {
+      return await stopSessionPromiseRef.current;
+    } finally {
+      stopSessionPromiseRef.current = null;
     }
   };
 

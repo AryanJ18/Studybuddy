@@ -49,7 +49,7 @@ async def generate_report(data: Summary):
     1. A short performance summary
     2. One key weakness
     3. One actionable improvement tip
-    Keep it concise.
+    Keep it concise.dont give ans in pointer, give ans in para and dont use any kind of bold or anything to separate data use multiple space
     """
 
 

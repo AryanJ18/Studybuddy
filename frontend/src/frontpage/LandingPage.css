@@ -1,0 +1,211 @@
+:root {
+  --bg-dark: #121212;
+  --panel-bg: #1e1e1e;
+  --text-light: #ffffff;
+  --text-muted: #a0a0a0;
+  --accent-blue: #3b82f6;
+  --accent-red: #ef4444;
+  --accent-green: #10b981;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 3rem 1rem;
+}
+
+/* CRITICAL: This hides the Video and Canvas completely while keeping them active in the DOM */
+.hidden-video-processor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  letter-spacing: 1px;
+}
+
+.app-main {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Tracking Panel (Timer & Recording State) */
+.tracking-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--panel-bg);
+  padding: 4rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.timer-display {
+  font-size: 6rem;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 1rem;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-red);
+  font-weight: 500;
+  margin-bottom: 3rem;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Blinking red dot for recording */
+.pulse-dot {
+  width: 12px;
+  height: 12px;
+  background-color: var(--accent-red);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Buttons */
+.btn {
+  padding: 1rem 3rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn-start {
+  background-color: var(--accent-blue);
+  color: white;
+}
+
+.btn-stop {
+  background-color: var(--accent-red);
+  color: white;
+}
+
+.btn-reset {
+  background-color: transparent;
+  color: var(--text-light);
+  border: 2px solid var(--text-muted);
+  margin-top: 2rem;
+}
+
+/* Summary Panel */
+.summary-panel {
+  background-color: var(--panel-bg);
+  padding: 3rem 2rem;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.summary-panel h2 {
+  margin-top: 0;
+  color: var(--accent-blue);
+  font-size: 2rem;
+}
+
+.summary-duration {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+/* Easily addable columns for AI Data */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.insight-column {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.insight-column--wide {
+  grid-column: span 2;
+}
+
+.insight-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.insight-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.insight-value--text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-light);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.primary-text {
+  color: var(--accent-green);
+}
+
+@media (max-width: 520px) {
+  .insight-column--wide {
+    grid-column: span 1;
+  }
+}
